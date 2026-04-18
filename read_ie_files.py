@@ -1,4 +1,5 @@
-from hashlib import new
+import os
+import shutil
 from pathlib import Path
 from stat_editor import *
 
@@ -234,6 +235,31 @@ def update_player_data(database, player_index):
     database[player_index]["element"] = elements.get(
         database[player_index]["unitbase"][0x5A]
     )
+
+
+def save_new(database, player_index, output_path):
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+
+    output_unitbase = os.path.join(output_path, "unitbase.dat")
+    shutil.copyfile(unitbase_path, output_unitbase)
+    output_unitstr = os.path.join(output_path, "unitbase.STR")
+    shutil.copyfile(unitstr_path, output_unitstr)
+    output_unitstat = os.path.join(output_path, "unitstat.dat")
+    shutil.copyfile(unitstat_path, output_unitstat)
+
+    with open(output_unitbase, "r+b") as f:
+        f.seek(unitbase_chunk_size * (player_index + 1))
+        f.write(database[player_index]["unitbase"])
+        f.close()
+    with open(output_unitstr, "r+b") as f:
+        f.seek(unitstr_chunk_size * (player_index + 1))
+        f.write(database[player_index]["profile"].encode(encoding="latin1"))
+        f.close()
+    with open(output_unitstat, "r+b") as f:
+        f.seek(unitstat_chunk_size * (player_index + 1))
+        f.write(database[player_index]["unitstat"])
+        f.close()
 
 
 def main():
