@@ -1,7 +1,8 @@
+import sys
 import os
 import shutil
 from pathlib import Path
-from stat_editor import *
+from src.stat_editor import *
 
 unitbase_path = "./ie_2_og/unitbase.dat"
 unitbase_chunk_size = 0x60
@@ -38,6 +39,7 @@ def get_player_base():
             username = [x for x in chunk[0x20:0x30] if x != 0x81]
             player = {
                 "unitbase": chunk,
+                "id": f"0x{chunk[0x4A]:02X} {chunk[0x4B]:02X}",
                 "name": bytes(name).decode(encoding="latin1").rstrip("\x00"),
                 "username": (
                     bytes(username).decode(encoding="latin1").rstrip("\x00")
@@ -103,7 +105,7 @@ def print_database(database):
         )
 
 
-def replace_player_unitbase(
+def change_player_unitbase(
     database,
     player_index,
     new_name=None,
@@ -262,11 +264,15 @@ def save_new(database, player_index, output_path):
         f.close()
 
 
-def main():
+def export_database():
     database = get_player_base()
     database = add_players_profile(database)
     database = add_players_stat(database)
-    print_database(database)
+    return database
+
+
+def main():
+    return
 
 
 if __name__ == "__main__":

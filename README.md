@@ -68,11 +68,13 @@ pip install -r requirements.txt
 ## Usage
 
 Run scripts from the project root directory.
+To specify a custom output directory, add the path as argument
 
 Example:
 
 ```
 python -m read_ie_files
+python -m read_ie_files <output-path>
 ```
 
 ---
