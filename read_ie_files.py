@@ -1,3 +1,4 @@
+from hashlib import new
 from pathlib import Path 
 from stat_editor import *
 
@@ -91,11 +92,45 @@ def print_database(database):
     for player in database:
         print(f'{player["name"]:<32} | {player["username"]:<16} | {player["gender"]:<8} | {player["age"]:<4} | {player["body_type"]:<10} | {player["position"]:<10} | {player["element"]:<10}')
 
+def replace_player_unitbase(database, player_index, new_name = None, new_username = None, new_gender = None, new_age = None, new_body_type = None, new_position = None, new_element = None):
+    player = database[player_index]
+    unitbase = bytearray(player['unitbase'])
+    if new_name is not None:
+        name_bytes = new_name.encode(encoding='latin1')
+        name_bytes = name_bytes[:0x20] + bytes([0x00] * (0x20 - len(name_bytes)))
+        unitbase[0x00:0x20] = name_bytes[0x00:0x20]
+    if new_username is not None:
+        username_bytes = new_username.encode(encoding='latin1')
+        username_bytes = username_bytes[:0x10] + bytes([0x00] * (0x10 - len(username_bytes)))
+        unitbase[0x20:0x30] = username_bytes[0x00:0x10]
+    if new_gender is not None:
+        unitbase[0x52] = 0x01 if new_gender == "M" else 0x00
+    if new_age is not None and new_age in range(0, 99):
+        unitbase[0x53] = new_age
+    if new_body_type is not None and new_body_type in [0x00, 0x01, 0x02]:
+        unitbase[0x54] = new_body_type
+    if new_position is not None and new_position in positions.values():
+        unitbase[0x55] = list(positions.keys())[list(positions.values()).index(new_position)]
+    if new_element is not None and new_element in elements.values():
+        unitbase[0x5A] = list(elements.keys())[list(elements.values()).index(new_element)]
+    database[player_index]['unitbase'] = bytes(unitbase)
+    update_player_data(database, player_index)
+
+def update_player_data(database, player_index):
+    name = [x for x in database[player_index]['unitbase'][0x00:0x20] if x != 0x81]
+    username = [x for x in database[player_index]['unitbase'][0x20:0x30] if x != 0x81]
+    database[player_index]["name"] = bytes(name).decode(encoding='latin1').rstrip('\x00')
+    database[player_index]["username"] = bytes(username).decode(encoding='latin1').rstrip('\x00') if database[player_index]['unitbase'][0x20] != 0x82 else ''
+    database[player_index]["gender"] = "M" if database[player_index]['unitbase'][0x52] == 0x01 else "F"
+    database[player_index]["age"] = database[player_index]['unitbase'][0x53]
+    database[player_index]["body_type"] = database[player_index]['unitbase'][0x54]
+    database[player_index]["position"] = positions.get(database[player_index]['unitbase'][0x55] & 0xF0)
+    database[player_index]["element"] = elements.get(database[player_index]['unitbase'][0x5A])
+
 def main():
     database = get_player_base()
     database = add_players_profile(database)
     database = add_players_stat(database)
-    print_database(database)
 
 if __name__ == '__main__':
     main()
