@@ -203,7 +203,13 @@ def change_player_stat(
         (move_name, level) = move_4
         player_stats = change_move(player_stats, 0x2C + 0x0C, move_name, level)
 
-    print_stats(player_stats)
+    database[player_index]["unitstat"] = bytes(player_stats)
+
+
+def change_profile(database, player_index, new_profile):
+    profile_bytes = new_profile.encode(encoding="latin1")
+    profile_bytes = profile_bytes[:0x80] + bytes([0x00] * (0x80 - len(profile_bytes)))
+    database[player_index]["profile"] = profile_bytes.decode("latin1").strip("\x00")
 
 
 def update_player_data(database, player_index):
