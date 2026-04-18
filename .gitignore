@@ -1,6 +1,12 @@
 # Inazuma Eleven 2 files
 ie_2_og/
 ie_2_og/*
+*/*.dat
+*/*.STR
+*/*.str
+*/*.pkb
+*/*.pkh
+*/*.bak
 
 # Cache
 __pycache__/
