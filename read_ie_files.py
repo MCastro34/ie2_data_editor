@@ -5,7 +5,7 @@ unitbase_path = "./ie_2_og/unitbase.dat"
 unitbase_chunk_size = 0x60
 
 unitstr_path = "./ie_2_og/unitbase.STR"
-unitstr_chunk_size = 0x70
+unitstr_chunk_size = 0x80
 
 unitstat_path = "./ie_2_og/unitstat.dat"
 unitstat_chunk_size = 0x50
@@ -21,7 +21,8 @@ positions = {
     0x20: "GK",
     0x40: "DF",
     0x60: "MF",
-    0x80: "FW"
+    0x80: "FW",
+    0x00: "N/A"
 }
 
 # UNITBASE DATA
@@ -40,11 +41,13 @@ def get_player_base():
     player_base = []
     for i in range(unitbase_chunk_size, len(data_base), unitbase_chunk_size):
         chunk = data_base[i:i + unitbase_chunk_size]
-        if(chunk[0x00] < 0x96):
+        if(chunk[0x00] < 0x96): # Remove last players that don't exist
+            name = [x for x in chunk[0x00:0x20] if x != 0x81]
+            username = [x for x in chunk[0x20:0x30] if x != 0x81]
             player = {
                 "unitbase": chunk,
-                "name": chunk[0x00:0x20].decode(encoding='latin1'),
-                "username": chunk[0x20:0x30].decode(encoding='latin1'),
+                "name": bytes(name).decode(encoding='latin1').rstrip('\x00'),
+                "username": bytes(username).decode(encoding='latin1').rstrip('\x00') if chunk[0x20] != 0x82 else '',
                 "gender": "M" if chunk[0x52] == 0x01 else "F",
                 "age": chunk[0x53],
                 "body_type": chunk[0x54],
@@ -67,14 +70,32 @@ def add_players_profile(database):
     data_str = file_path.read_bytes()
     for i in range(0, len(database)):
         player_profile_idx = unitstr_chunk_size * (i + 1)
-        database[i]['profile'] = data_str[player_profile_idx:player_profile_idx + unitstr_chunk_size].decode('latin1')
+        database[i]['profile'] = data_str[player_profile_idx:player_profile_idx + unitstr_chunk_size].decode('latin1').strip('\x00')
     return database
+
+def find_player_by_username(database, username):
+    for player in database:
+        if player['username'].upper() == username.upper():
+            return player
+    return None
+
+def find_player_index_by_username(database, username):
+    for i in range(0, len(database)):
+        if database[i]['username'].upper() == username.upper():
+            return i
+    return None
+
+def print_database(database):
+    print(f'{"NAME":<32} | {"USERNAME":<16} | {"GENDER":<8} | {"AGE":<4} | {"BODY TYPE":<10} | {"POSITION":<10} | {"ELEMENT":<10}')
+    print('-' * 120)
+    for player in database:
+        print(f'{player["name"]:<32} | {player["username"]:<16} | {player["gender"]:<8} | {player["age"]:<4} | {player["body_type"]:<10} | {player["position"]:<10} | {player["element"]:<10}')
 
 def main():
     database = get_player_base()
     database = add_players_profile(database)
     database = add_players_stat(database)
-    print(database[290])
+    print_database(database)
 
 if __name__ == '__main__':
     main()
